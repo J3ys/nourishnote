@@ -70,6 +70,12 @@
       padding: 20px;
       border: 1px solid #888;
       width: 80%;
+      max-width: 600px;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
     }
   </style>
   <!-- Google tag (gtag.js) -->
@@ -105,7 +111,9 @@
 <div id="myModal" class="modal">
   <div class="modal-content">
     <p id="modal-text"></p>
-    <button onclick="closeModal()">OK</button>
+    <div class="modal-buttons">
+      <button id="ok-button" onclick="closeModal()">OK</button>
+    </div>
   </div>
 </div>
 
@@ -114,8 +122,10 @@
 
   function addRecord(breast) {
     if (records.length > 0 && records[0].breast === breast) {
-      openModal("Are you sure that you want to use the same side as previous?", () => {
+      openModal("Are you sure that you want to use the <h1 style=\"color: red\">same side</h1> as previous?", () => {
         saveRecord(breast);
+      }, () => {
+        // Do nothing on cancel
       });
     } else {
       saveRecord(breast);
@@ -137,22 +147,40 @@
       const timeDiff = (timestamp - new Date(records[1].timestamp)) / 1000;
       const hours = Math.floor(timeDiff / 3600);
       const minutes = Math.floor((timeDiff % 3600) / 60);
-      openModal(`Time since previous record: ${hours} hours and ${minutes} minutes.`);
+      openModal(`Time since previous record: <strong> ${hours} hours and ${minutes} minutes. </strong>`);
     }
   }
 
-  function openModal(text, callback) {
+  function openModal(text, callback, cancelCallback) {
     const modal = document.getElementById('myModal');
     const modalText = document.getElementById('modal-text');
-    modalText.innerText = text;
+    const okButton = document.getElementById('ok-button');
+    const buttonContainer = okButton.parentNode;
+    modalText.innerHTML = text;
     modal.style.display = 'block';
 
-    modal.onclick = function(event) {
-      if (event.target === modal || event.target.tagName === 'BUTTON') {
-        modal.style.display = 'none';
-        if (callback) {
-          callback();
-        }
+    // Remove existing cancel button, if any
+    const existingCancelButton = document.getElementById('cancel-button');
+    if (existingCancelButton) {
+      buttonContainer.removeChild(existingCancelButton);
+    }
+
+    // Create cancel button if cancel callback is provided
+    if (cancelCallback) {
+      const cancelButton = document.createElement('button');
+      cancelButton.id = 'cancel-button';
+      cancelButton.innerHTML = '<div style="color: red">Cancel</div>';
+      cancelButton.onclick = function() {
+        closeModal();
+        cancelCallback();
+      };
+      buttonContainer.appendChild(cancelButton);
+    }
+
+    okButton.onclick = function() {
+      closeModal();
+      if (callback) {
+        callback();
       }
     }
   }
